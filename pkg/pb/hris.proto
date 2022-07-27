@@ -15,7 +15,8 @@ message UploadHRISRequest {
   int64 run_type = 2;
   int64 import_type = 3;
   int64 organization_id = 4;
-  bytes file = 5;
+  string file_name = 5;
+  bytes file_bytes = 6;
 }
 
 message UploadHRISResponse {

@@ -6,7 +6,7 @@ import (
 	"klickhr-hris/pkg/db"
 	"klickhr-hris/pkg/models"
 	"klickhr-hris/pkg/pb"
-
+	"klickhr-hris/pkg/utils"
 	"net/http"
 )
 
@@ -15,8 +15,15 @@ type Server struct {
 }
 
 func (s *Server) UploadHRIS(ctx context.Context, req *pb.UploadHRISRequest) (*pb.UploadHRISResponse, error) {
-	var HRIS models.HRIS
+	err := utils.SaveFile(req.FileName, req.FileBytes)
+	if err != nil {
+		return &pb.UploadHRISResponse{
+			Status: http.StatusConflict,
+			Error:  err.Error(),
+		}, nil
+	}
 
+	var HRIS models.HRIS
 	HRIS.FileType = int(req.FileType)
 	HRIS.ImportType = int(req.ImportType)
 	HRIS.RunType = int(req.RunType)
