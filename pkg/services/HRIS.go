@@ -17,6 +17,7 @@ type Server struct {
 }
 
 func (s *Server) UploadHRIS(ctx context.Context, req *pb.UploadHRISRequest) (*pb.UploadHRISResponse, error) {
+	//save file
 	err := utils.SaveFile(req.FileName, req.FileBytes)
 	if err != nil {
 		return &pb.UploadHRISResponse{
@@ -24,7 +25,14 @@ func (s *Server) UploadHRIS(ctx context.Context, req *pb.UploadHRISRequest) (*pb
 			Error:  err.Error(),
 		}, nil
 	}
-
+	//file validations
+	err = utils.ValidateFile("./" + req.FileName)
+	if err != nil {
+		return &pb.UploadHRISResponse{
+			Status: http.StatusConflict,
+			Error:  err.Error(),
+		}, nil
+	}
 	var HRIS models.HRIS
 	HRIS.FileType = int(req.FileType)
 	HRIS.ImportType = int(req.ImportType)
