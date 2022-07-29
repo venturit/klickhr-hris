@@ -4,12 +4,13 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"klickhr-hris/pkg/constants"
 	"os"
 	"path/filepath"
 	"reflect"
 )
 
-var correctHeaders = []string{"First Name",
+var correctEmployeeHeaders = []string{"First Name",
 	"Last Name",
 	"Employee ID",
 	"Emplpyee Status",
@@ -32,6 +33,18 @@ var correctHeaders = []string{"First Name",
 	"Zip Code",
 	"FLSA Status",
 	"Union"}
+
+var correctOrganizationHeaders = []string{
+	"Level 1 Name",
+	"Level 1 Code",
+	"Level 2 Name",
+	"Level 2 Code",
+	"Level 3 Name",
+	"Level 3 Code",
+	"Level 4 Name",
+	"Level 4 Code",
+	"Job Status",
+}
 
 func SaveFile(fileName string, fileBytes []byte) error {
 	err := os.WriteFile(fmt.Sprintf("./%s", fileName), fileBytes, 0644)
@@ -59,7 +72,7 @@ func ReadCSVData(fileName string) ([][]string, error) {
 	return records, nil
 }
 
-func ValidateFile(path string) error {
+func ValidateFile(path string, file_type int) error {
 	//extension validation
 	fileExtension := filepath.Ext(path)
 	if fileExtension != ".csv" {
@@ -80,13 +93,24 @@ func ValidateFile(path string) error {
 	for _, header := range headers {
 		stringHeaders += header + ", "
 	}
-	var stringCorrectHeaders string
-	for _, correctheader := range correctHeaders {
-		stringCorrectHeaders += correctheader + ", "
-	}
 	fmt.Println(stringHeaders)
-	if !(reflect.DeepEqual(headers, correctHeaders)) {
-		return errors.New("the headers delivered are not the corresponding ones:\n" + stringCorrectHeaders + "\nwas obtained:\n" + stringHeaders)
+	var stringCorrectHeaders string
+
+	if file_type == constants.HRIS_FILE_TYPE_EMPLOYEE {
+		for _, correctheader := range correctEmployeeHeaders {
+			stringCorrectHeaders += correctheader + ", "
+		}
+		if !(reflect.DeepEqual(headers, correctEmployeeHeaders)) {
+			return errors.New("the headers delivered are not the corresponding ones:\n" + stringCorrectHeaders + "\nwas obtained:\n" + stringHeaders)
+		}
+	} else {
+		for _, correctheader := range correctOrganizationHeaders {
+			stringCorrectHeaders += correctheader + ", "
+		}
+		if !(reflect.DeepEqual(headers, correctOrganizationHeaders)) {
+			return errors.New("the headers delivered are not the corresponding ones:\n" + stringCorrectHeaders + "\nwas obtained:\n" + stringHeaders)
+		}
 	}
+
 	return nil
 }

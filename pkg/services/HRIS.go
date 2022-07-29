@@ -26,7 +26,7 @@ func (s *Server) UploadHRIS(ctx context.Context, req *pb.UploadHRISRequest) (*pb
 		}, nil
 	}
 	//file validations
-	err = utils.ValidateFile("./" + req.FileName)
+	err = utils.ValidateFile("./"+req.FileName, int(req.ImportType))
 	if err != nil {
 		return &pb.UploadHRISResponse{
 			Status: http.StatusConflict,
@@ -61,11 +61,11 @@ func (s *Server) UploadHRIS(ctx context.Context, req *pb.UploadHRISRequest) (*pb
 
 func executeHRIS(HRIS models.HRIS) {
 	switch HRIS.RunType {
-	case constants.HRIS_RUN_TYPE_APPEND:
+	case constants.HRIS_IMPORT_TYPE_APPEND:
 		fmt.Println("APPEND")
-	case constants.HRIS_RUN_TYPE_FULL:
+	case constants.HRIS_IMPORT_TYPE_FULL:
 		fmt.Println("FULL")
-	case constants.HRIS_RUN_TYPE_VALIDATE:
+	case constants.HRIS_IMPORT_TYPE_VALIDATE:
 		fmt.Println("VALIDATE")
 	}
 }
