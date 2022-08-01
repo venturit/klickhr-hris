@@ -54,8 +54,8 @@ func SaveFile(fileName string, fileBytes []byte) error {
 	return nil
 }
 
-func ReadCSVData(fileName string) ([][]string, error) {
-	f, err := os.Open(fileName)
+func ReadCSVData(url string) ([][]string, error) {
+	f, err := os.Open(url)
 	if err != nil {
 		return [][]string{}, err
 	}
@@ -93,7 +93,6 @@ func ValidateFile(path string, file_type int) error {
 	for _, header := range headers {
 		stringHeaders += header + ", "
 	}
-	fmt.Println(stringHeaders)
 	var stringCorrectHeaders string
 
 	if file_type == constants.HRIS_FILE_TYPE_EMPLOYEE {
