@@ -93,36 +93,14 @@ func executeHRIS(HRIS models.HRIS, url string) {
 }
 
 func validateHRIS(url string, file_type int) ([]ErrorListItem, error) {
-	fmt.Println("Validate")
+	var errorList []ErrorListItem
 	data, err := utils.ReadCSVData(url)
 	if err != nil {
 		return nil, err
 	}
-	var errorList []ErrorListItem
-	var duplicateIndex []int
-	var duplicate bool
 	//ORGANIZATION FILE
 	if file_type == constants.HRIS_FILE_TYPE_ORGANIZATION {
-		var organizationList = parseToOrganizationList(data)
-		for index, organization := range organizationList {
-			//duplicate validation
-			if isDuplicateIndex(index, duplicateIndex) {
-				continue
-			}
-			duplicateIndex, duplicate = duplicateValidation(organization, organizationList, index, duplicateIndex)
-			if duplicate {
-				errorList = append(errorList, ErrorListItem{index, "duplicate row!"})
-				for _, i := range duplicateIndex {
-					errorList = append(errorList, ErrorListItem{i, "duplicate row!"})
-				}
-				continue
-			}
-			//fields validation
-			if !(organization.Job_Status == "Active" || organization.Job_Status == "Inactive") {
-				errorList = append(errorList, ErrorListItem{index, "Only values allowed are “Active” or “Inactive”"})
-			}
-
-		}
+		errorList = organizationValidation(data)
 	} else {
 		//EMPLOYEE FILE
 		for index, row := range data {
@@ -151,7 +129,7 @@ func parseToOrganizationList(data [][]string) []OrganizationRow {
 	return orgRowList
 }
 
-func duplicateValidation(item OrganizationRow, list []OrganizationRow, index int, indexList []int) ([]int, bool) {
+func organizationDuplicateValidation(item OrganizationRow, list []OrganizationRow, index int, indexList []int) ([]int, bool) {
 	var found bool
 	for i := index + 1; i < len(list); i++ {
 		if item == list[i] {
@@ -159,8 +137,6 @@ func duplicateValidation(item OrganizationRow, list []OrganizationRow, index int
 			found = true
 		}
 	}
-	fmt.Println("duplicateValidation")
-	fmt.Println(indexList)
 	return indexList, found
 }
 
@@ -171,4 +147,137 @@ func isDuplicateIndex(index int, indexList []int) bool {
 		}
 	}
 	return false
+}
+
+func organizationValidation(data [][]string) []ErrorListItem {
+	var errorList []ErrorListItem
+	var duplicateIndex []int
+	var duplicate bool
+	var organizationList = parseToOrganizationList(data)
+	for index, organization := range organizationList {
+
+		//duplicate validation
+		if isDuplicateIndex(index, duplicateIndex) {
+			continue
+		}
+		duplicateIndex, duplicate = organizationDuplicateValidation(organization, organizationList, index, duplicateIndex)
+		if duplicate {
+			errorList = append(errorList, ErrorListItem{index, "duplicate row!"})
+			for _, i := range duplicateIndex {
+				errorList = append(errorList, ErrorListItem{i, "duplicate row!"})
+			}
+			continue
+		}
+
+		//required validations
+		if organization.Level_1_Code == "" {
+			errorList = append(errorList, ErrorListItem{index, "level_1_code field is required"})
+		}
+		if organization.Level_1_Name == "" {
+			errorList = append(errorList, ErrorListItem{index, "level_1_name field is required"})
+		}
+		if organization.Level_2_Code == "" {
+			errorList = append(errorList, ErrorListItem{index, "level_2_code field is required"})
+		}
+		if organization.Level_2_Name == "" {
+			errorList = append(errorList, ErrorListItem{index, "level_2_name field is required"})
+		}
+		if organization.Level_3_Code == "" {
+			errorList = append(errorList, ErrorListItem{index, "level_3_code field is required"})
+		}
+		if organization.Level_3_Name == "" {
+			errorList = append(errorList, ErrorListItem{index, "level_3_name field is required"})
+		}
+		if organization.Level_4_Code == "" {
+			errorList = append(errorList, ErrorListItem{index, "level_4_code field is required"})
+		}
+		if organization.Level_4_Name == "" {
+			errorList = append(errorList, ErrorListItem{index, "level_4_name field is required"})
+		}
+		if organization.Job_Status == "" {
+			errorList = append(errorList, ErrorListItem{index, "job_Status field is required"})
+		}
+		//char validation
+		if len(organization.Level_1_Code) > 250 {
+			errorList = append(errorList, ErrorListItem{index, "level_1_code field cannot exceed 250 characters"})
+		}
+		if len(organization.Level_1_Name) > 250 {
+			errorList = append(errorList, ErrorListItem{index, "level_1_name field cannot exceed 250 characters"})
+		}
+		if len(organization.Level_2_Code) > 250 {
+			errorList = append(errorList, ErrorListItem{index, "level_2_code field cannot exceed 250 characters"})
+		}
+		if len(organization.Level_2_Name) > 250 {
+			errorList = append(errorList, ErrorListItem{index, "level_2_name field cannot exceed 250 characters"})
+		}
+		if len(organization.Level_3_Code) > 250 {
+			errorList = append(errorList, ErrorListItem{index, "level_3_code field cannot exceed 250 characters"})
+		}
+		if len(organization.Level_3_Name) > 250 {
+			errorList = append(errorList, ErrorListItem{index, "level_3_name field cannot exceed 250 characters"})
+		}
+		if len(organization.Level_4_Code) > 250 {
+			errorList = append(errorList, ErrorListItem{index, "level_4_code field cannot exceed 250 characters"})
+		}
+		if len(organization.Level_4_Name) > 250 {
+			errorList = append(errorList, ErrorListItem{index, "level_4_name field cannot exceed 250 characters"})
+		}
+		if len(organization.Job_Status) > 250 {
+			errorList = append(errorList, ErrorListItem{index, "job_status field cannot exceed 250 characters"})
+		}
+
+		//values validation
+		if !(organization.Job_Status == "Active" || organization.Job_Status == "Inactive") {
+			errorList = append(errorList, ErrorListItem{index, "Only values allowed are “Active” or “Inactive”"})
+		}
+	}
+
+	//validation When a required code has more than one name referenced on a file
+	errorList = validateCodeAndNameAssociated(organizationList, errorList)
+	return errorList
+}
+
+func validateCodeAndNameAssociated(list []OrganizationRow, errorList []ErrorListItem) []ErrorListItem {
+	var indexLoggedList []int
+	var isIndexJLogged bool
+	var isIndexILogged bool
+	for i := 0; i < len(list); i++ {
+		isIndexILogged = false
+		for j := i + 1; j < len(list); j++ {
+			isIndexJLogged = false
+			if isDuplicateIndex(j, indexLoggedList) {
+				continue
+			}
+			//level_1
+			if list[i].Level_1_Code == list[j].Level_1_Code && list[i].Level_1_Name != list[j].Level_1_Name {
+				errorList = append(errorList, ErrorListItem{j, "Code " + list[i].Level_1_Code + " has more than one name associated."})
+				isIndexJLogged = true
+			}
+			//level_2
+			if list[i].Level_2_Code == list[j].Level_2_Code && list[i].Level_2_Name != list[j].Level_2_Name {
+				errorList = append(errorList, ErrorListItem{j, "Code " + list[i].Level_2_Code + " has more than one name associated."})
+				isIndexJLogged = true
+			}
+			//level_3
+			if list[i].Level_3_Code == list[j].Level_3_Code && list[i].Level_3_Name != list[j].Level_3_Name {
+				errorList = append(errorList, ErrorListItem{j, "Code " + list[i].Level_3_Code + " has more than one name associated."})
+				isIndexJLogged = true
+			}
+			//level_4
+			if list[i].Level_4_Code == list[j].Level_4_Code && list[i].Level_4_Name != list[j].Level_4_Name {
+				errorList = append(errorList, ErrorListItem{j, "Code " + list[i].Level_4_Code + " has more than one name associated."})
+				isIndexJLogged = true
+			}
+
+			if isIndexJLogged {
+				if !isIndexILogged {
+					errorList = append(errorList, ErrorListItem{i, "Code " + list[i].Level_4_Code + " has more than one name associated."})
+					indexLoggedList = append(indexLoggedList, i)
+					isIndexILogged = true
+				}
+				indexLoggedList = append(indexLoggedList, j)
+			}
+		}
+	}
+	return errorList
 }

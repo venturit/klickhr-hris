@@ -1,8 +1,11 @@
 package services
 
-type Server struct {
-	H db.Handler
-}
+import (
+	"context"
+	"klickhr-hris/pkg/models"
+	"klickhr-hris/pkg/pb"
+	"net/http"
+)
 
 func (s *Server) GetAllHRIS(ctx context.Context, req *pb.UploadHRISRequest) (*pb.UploadHRISResponse, error) {
 	var HRIS models.HRIS
