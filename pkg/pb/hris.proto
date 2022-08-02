@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package hris;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./pkg/pb";
+
+service HRISService {
+  rpc UploadHRIS(UploadHRISRequest) returns (UploadHRISResponse) {}
+  rpc GetAllHRIS(GetAllHRISrequest) returns (GetAllHRISResponse) {}
+}
+
+//upload HRIS
+message UploadHRISRequest {
+  int64 file_type = 1;
+  int64 run_type = 2;
+  int64 import_type = 3;
+  int64 organization_id = 4;
+  string file_name = 5;
+  bytes file_bytes = 6;
+}
+message UploadHRISResponse {
+  int64 status = 1;
+  string error = 2;
+}
+
+//get all HRIS
+message HRIS{
+	int64 Id = 1;          
+	string FileType = 2;       
+	string RunType = 3;      
+	string ImportType = 4;     
+	google.protobuf.Timestamp ImportDate = 5;         
+	bool Errors = 9;        
+	string User = 10;
+	string Status = 11;   
+}
+message GetAllHRISrequest{}
+message GetAllHRISResponse {
+  int64 status = 1;
+  repeated HRIS data = 2; //HRIS array
+  string error = 3;
+}
