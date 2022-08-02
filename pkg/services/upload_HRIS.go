@@ -87,6 +87,7 @@ func executeHRIS(HRIS models.HRIS, url string) {
 		if err != nil {
 			fmt.Println(err)
 		}
+		//PARA EL JHOAN DEL FUTURO, LA PRUEBA DE DUPLICADOS LE FALTA UN DUPLICADO FIN, ARREGLELO, COMPRA COMIDA
 		fmt.Println(errorList)
 	}
 }
@@ -98,14 +99,29 @@ func validateHRIS(url string, file_type int) ([]ErrorListItem, error) {
 		return nil, err
 	}
 	var errorList []ErrorListItem
+	var duplicateIndex []int
+	var duplicate bool
 	//ORGANIZATION FILE
 	if file_type == constants.HRIS_FILE_TYPE_ORGANIZATION {
 		var organizationList = parseToOrganizationList(data)
 		for index, organization := range organizationList {
+			//duplicate validation
+			if isDuplicateIndex(index, duplicateIndex) {
+				continue
+			}
+			duplicateIndex, duplicate = duplicateValidation(organization, organizationList, index, duplicateIndex)
+			if duplicate {
+				errorList = append(errorList, ErrorListItem{index, "duplicate row!"})
+				for _, i := range duplicateIndex {
+					errorList = append(errorList, ErrorListItem{i, "duplicate row!"})
+				}
+				continue
+			}
 			//fields validation
 			if !(organization.Job_Status == "Active" || organization.Job_Status == "Inactive") {
 				errorList = append(errorList, ErrorListItem{index, "Only values allowed are “Active” or “Inactive”"})
 			}
+
 		}
 	} else {
 		//EMPLOYEE FILE
@@ -133,4 +149,26 @@ func parseToOrganizationList(data [][]string) []OrganizationRow {
 		orgRowList = append(orgRowList, orgRow)
 	}
 	return orgRowList
+}
+
+func duplicateValidation(item OrganizationRow, list []OrganizationRow, index int, indexList []int) ([]int, bool) {
+	var found bool
+	for i := index + 1; i < len(list); i++ {
+		if item == list[i] {
+			indexList = append(indexList, i)
+			found = true
+		}
+	}
+	fmt.Println("duplicateValidation")
+	fmt.Println(indexList)
+	return indexList, found
+}
+
+func isDuplicateIndex(index int, indexList []int) bool {
+	for i := 0; i < len(indexList); i++ {
+		if index == indexList[i] {
+			return true
+		}
+	}
+	return false
 }
